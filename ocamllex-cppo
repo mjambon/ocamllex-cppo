@@ -1,0 +1,35 @@
+#! /bin/sh
+
+set -e
+tmp_mll=$(tempfile -d . -p cppo -s .mll)
+tmp_ml=$(echo $tmp_mll | sed -e 's/\.mll$/\.ml/')
+
+clean () {
+    rm -f $tmp_mll $tmp_ml
+}
+
+fail () {
+    clean
+    exit 1
+}
+
+gen () {
+    # cppo (<= 0.9.2) locations are off by one
+    first_line=$(( CPPO_FIRST_LINE + 1 ))
+
+    # ocamllex location workaround, part 1
+    for i in $(seq 3 $first_line); do echo; done > $tmp_mll
+
+    # normal location directive that ocamllex (<= 4.00.0) ignores
+    echo "# $first_line \"$CPPO_FILE\"" >> $tmp_mll
+
+    cat >> $tmp_mll
+
+    ocamllex $tmp_mll > /dev/null || fail
+
+    # ocamllex location workaround, part 2
+    sed -e "s,^\(#.*\)\"$tmp_mll\",\1\"$CPPO_FILE\"," $tmp_ml
+}
+
+gen
+clean

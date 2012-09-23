@@ -1,0 +1,21 @@
+(*
+  OCaml file with embedded ocamllex-generated code.
+*)
+
+#ext ocamllex
+let digit = ['0'-'9']
+rule ints = parse
+    | '-'? digit+ as s { int_of_string s :: ints lexbuf }
+    | _                { ints lexbuf }
+    | eof              { [] }
+#endext
+
+let extract_ints s =
+  let lexbuf = Lexing.from_string s in
+  ints lexbuf
+
+let main () =
+  let l = extract_ints " 123x456 -7!" in
+  List.iter (fun n -> Printf.printf "%i\n" n) l
+
+let () = main ()
